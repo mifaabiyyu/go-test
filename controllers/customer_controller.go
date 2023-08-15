@@ -8,27 +8,27 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/mifaabiyyu/go-test.git/models"
 )
 
 type CustomerController struct {
-    Collection *mongo.Collection
+	Collection *mongo.Collection
 }
 
-
 type CustomerWithAddresses struct {
-	ID        primitive.ObjectID  `bson:"_id,omitempty" json:"id"`
-	FirstName string              `bson:"first_name" json:"first_name"`
-	LastName  string              `bson:"last_name" json:"last_name"`
-	Email     string              `bson:"email" json:"email"`
+	ID        primitive.ObjectID       `bson:"_id,omitempty" json:"id"`
+	FirstName string                   `bson:"first_name" json:"first_name"`
+	LastName  string                   `bson:"last_name" json:"last_name"`
+	Email     string                   `bson:"email" json:"email"`
 	Addresses []models.CustomerAddress `bson:"addresses" json:"addresses"`
 }
 
 func NewCustomerController(db *mongo.Database) *CustomerController {
-    return &CustomerController{
-        Collection: db.Collection("customers"),
-    }
+	return &CustomerController{
+		Collection: db.Collection("customers"),
+	}
 }
 
 func (cc *CustomerController) CreateCustomer(c *gin.Context) {
@@ -47,7 +47,8 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
+	customer.ID = primitive.NewObjectID()
 	_, err = cc.Collection.InsertOne(context.Background(), customer)
 	if err != nil {
 		// Check if the error is due to duplicate email
@@ -183,10 +184,18 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid customer ID format"})
 		return
 	}
-	cac := NewCustomerAddressController(cc.Collection.Database())
-	
+	clientOptions := options.Client().ApplyURI("mongodb+srv://mifaabiyyu:indun1234@cluster0.geg1dqt.mongodb.net/")
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := client.Database("mydatabase")
+	cac := NewTransactionController(cc.Collection.Database(), NewTransactionPaymentController(db))
+
 	var existingCustomer models.Customer
-	err = cac.Collection.FindOne(context.Background(), bson.M{"_id": customerID}).Decode(&existingCustomer)
+	err = cc.Collection.FindOne(context.Background(), bson.M{"_id": customerID}).Decode(&existingCustomer)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
@@ -196,14 +205,21 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 		return
 	}
 
-	addressCount, err := cac.Collection.CountDocuments(context.Background(), bson.M{"customer_id": customerID})
+	transactionCount, err := cac.Collection.CountDocuments(context.Background(), bson.M{"customer_id": customerID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if addressCount > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete customer with associated addresses"})
+	if transactionCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete customer with associated transaction"})
+		return
+	}
+
+	// Delete associated customer addresses
+	_, err = cc.Collection.Database().Collection("customer_addresses").DeleteMany(context.Background(), bson.M{"customer_id": customerID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -214,5 +230,5 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Customer deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "Customer and associated addresses deleted"})
 }

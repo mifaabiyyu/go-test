@@ -39,7 +39,7 @@ func (pmc *PaymentMethodController) CreatePaymentMethod(c *gin.Context) {
 		return
 	}
 	// Clear the ID field to let MongoDB generate it
-	paymentMethod.ID = primitive.NilObjectID
+	paymentMethod.ID = primitive.NewObjectID()
 
 	_, err = pmc.Collection.InsertOne(context.Background(), paymentMethod)
 	if err != nil {
@@ -146,5 +146,3 @@ func (pmc *PaymentMethodController) DeletePaymentMethod(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Payment method deleted"})
 }
-
-

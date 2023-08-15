@@ -38,7 +38,7 @@ func (pc *ProductController) CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	product.ID = primitive.NewObjectID()
 	_, err = pc.Collection.InsertOne(context.Background(), product)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -47,7 +47,6 @@ func (pc *ProductController) CreateProduct(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, product)
 }
-
 
 func (pc *ProductController) GetProducts(c *gin.Context) {
 	var products []models.Product
@@ -134,7 +133,20 @@ func (pc *ProductController) DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
+	td := NewTransactionDetailController(pc.Collection.Database())
+
+	transactionCount, err := td.Collection.CountDocuments(context.Background(), bson.M{"product_id": productID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if transactionCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete product with associated transaction"})
+		return
+	}
+
 	_, err = pc.Collection.DeleteOne(context.Background(), bson.M{"_id": productID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -143,4 +155,3 @@ func (pc *ProductController) DeleteProduct(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted"})
 }
-

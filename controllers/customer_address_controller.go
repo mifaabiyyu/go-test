@@ -27,7 +27,7 @@ func (cac *CustomerAddressController) CreateCustomerAddress(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	customerAddress.ID = primitive.NewObjectID()
 	_, err := cac.Collection.InsertOne(context.Background(), customerAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -110,7 +110,7 @@ func (cac *CustomerAddressController) UpdateCustomerAddress(c *gin.Context) {
 func (cac *CustomerAddressController) DeleteCustomerAddress(c *gin.Context) {
 	id := c.Param("id")
 	customerAddressID, err := primitive.ObjectIDFromHex(id)
-	
+
 	var existingAddress models.CustomerAddress
 	err = cac.Collection.FindOne(context.Background(), bson.M{"_id": customerAddressID}).Decode(&existingAddress)
 	if err != nil {
@@ -127,8 +127,6 @@ func (cac *CustomerAddressController) DeleteCustomerAddress(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-
 
 	c.JSON(http.StatusOK, gin.H{"message": "Customer address deleted"})
 }

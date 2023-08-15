@@ -38,6 +38,7 @@ func main() {
 	customerAddressController := controllers.NewCustomerAddressController(db)
 	productController := controllers.NewProductController(db)
 	paymentMethodController := controllers.NewPaymentMethodController(db)
+	transactionController := controllers.NewTransactionController(db, controllers.NewTransactionPaymentController(db))
 
 	// Define routes
 	router.POST("/customers", customerController.CreateCustomer)
@@ -45,7 +46,6 @@ func main() {
 	router.GET("/customers/:id", customerController.GetCustomer)
 	router.PUT("/customers/:id", customerController.UpdateCustomer)
 	router.DELETE("/customers/:id", customerController.DeleteCustomer)
-
 
 	router.POST("/customer-addresses", customerAddressController.CreateCustomerAddress)
 	router.GET("/customer-addresses", customerAddressController.GetCustomerAddresses)
@@ -65,6 +65,11 @@ func main() {
 	router.PUT("/payment-method/:id", paymentMethodController.UpdatePaymentMethod)
 	router.DELETE("/payment-method/:id", paymentMethodController.DeletePaymentMethod)
 
+	router.GET("/transactions", transactionController.GetTransactions)
+	router.GET("/transaction/:id", transactionController.GetTransaction)
+	router.POST("/transaction", transactionController.CreateTransaction)
+	router.PUT("/transaction/:id", transactionController.UpdateTransaction)
+	router.DELETE("/transaction/:id", transactionController.DeleteTransaction)
 	// Start the server
 	router.Run(":8080")
 }
