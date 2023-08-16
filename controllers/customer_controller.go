@@ -173,7 +173,7 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	updatedCustomer.ID = customerID
+	updatedCustomer.ID = primitive.NewObjectID()
 	c.JSON(http.StatusOK, updatedCustomer)
 }
 

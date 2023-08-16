@@ -104,6 +104,8 @@ func (cac *CustomerAddressController) UpdateCustomerAddress(c *gin.Context) {
 		return
 	}
 
+	customerAddress.ID = primitive.NewObjectID()
+
 	c.JSON(http.StatusOK, customerAddress)
 }
 

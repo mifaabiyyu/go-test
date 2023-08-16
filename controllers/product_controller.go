@@ -112,6 +112,7 @@ func (pc *ProductController) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	updatedProduct.ID = primitive.NewObjectID()
 	c.JSON(http.StatusOK, updatedProduct)
 }
 

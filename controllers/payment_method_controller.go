@@ -114,6 +114,8 @@ func (pmc *PaymentMethodController) UpdatePaymentMethod(c *gin.Context) {
 		return
 	}
 
+	updatedPaymentMethod.ID = primitive.NewObjectID()
+
 	c.JSON(http.StatusOK, updatedPaymentMethod)
 }
 
