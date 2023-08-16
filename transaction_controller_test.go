@@ -81,10 +81,10 @@ func TestGetTransaction(t *testing.T) {
 
 	idData := "64dc291883f42d242a656d61"
 	r := gin.Default()
-	r.GET("/transaction" + idData)
+	r.GET("/transaction/" + idData)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/transaction"+idData, nil)
+	req, _ := http.NewRequest("GET", "/transaction/"+idData, nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
